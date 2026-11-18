@@ -27,7 +27,7 @@ Binary incrementer (halts),250,halted,8,1,random,Decision Tree,1.0,1,1
 Binary incrementer (halts),250,halted,8,1,random,Random Forest,0.9833333333333333,1,1
 Binary incrementer (halts),250,halted,8,1,random,Neural Net (MLP),0.9999827794465135,1,1
 Binary incrementer (halts),250,halted,8,1,hard,Decision Tree,0.862228495256017,1,1
-Binary incrementer (halts),250,halted,8,1,hard,Random Forest,0.4503693269326229,0,0
+Binary incrementer (halts),250,halted,8,1,hard,Random Forest,0.45036932693262294,0,0
 Binary incrementer (halts),250,halted,8,1,hard,Neural Net (MLP),0.022458893156382134,0,0
 Binary incrementer (halts),500,halted,8,1,random,Decision Tree,1.0,1,1
 Binary incrementer (halts),500,halted,8,1,random,Random Forest,0.9833333333333333,1,1
@@ -123,7 +123,7 @@ Binary incrementer (halts),1000,halted,8,1,hard,Neural Net (MLP),0.0224588931563
 4-state busy beaver (halts in 107 steps),1000,halted,107,1,random,Random Forest,0.065625,0,0
 4-state busy beaver (halts in 107 steps),1000,halted,107,1,random,Neural Net (MLP),0.09176891876334596,0,0
 4-state busy beaver (halts in 107 steps),1000,halted,107,1,hard,Decision Tree,0.6954606941131504,1,1
-4-state busy beaver (halts in 107 steps),1000,halted,107,1,hard,Random Forest,0.6274098917722086,1,1
+4-state busy beaver (halts in 107 steps),1000,halted,107,1,hard,Random Forest,0.6274098917722087,1,1
 4-state busy beaver (halts in 107 steps),1000,halted,107,1,hard,Neural Net (MLP),0.014069841053039257,0,0
 2-state busy beaver (halts),10,halted,6,1,random,Decision Tree,1.0,1,1
 2-state busy beaver (halts),10,halted,6,1,random,Random Forest,0.9833333333333333,1,1
@@ -141,7 +141,7 @@ Binary incrementer (halts),1000,halted,8,1,hard,Neural Net (MLP),0.0224588931563
 2-state busy beaver (halts),50,halted,6,1,random,Random Forest,0.975,1,1
 2-state busy beaver (halts),50,halted,6,1,random,Neural Net (MLP),0.9999131653186847,1,1
 2-state busy beaver (halts),50,halted,6,1,hard,Decision Tree,0.71530363259368,1,1
-2-state busy beaver (halts),50,halted,6,1,hard,Random Forest,0.21505380656648773,0,0
+2-state busy beaver (halts),50,halted,6,1,hard,Random Forest,0.2150538065664877,0,0
 2-state busy beaver (halts),50,halted,6,1,hard,Neural Net (MLP),0.0002532599812549818,0,0
 2-state busy beaver (halts),100,halted,6,1,random,Decision Tree,1.0,1,1
 2-state busy beaver (halts),100,halted,6,1,random,Random Forest,0.965,1,1
@@ -183,7 +183,7 @@ Unary addition 111+11 (halts),50,halted,8,1,random,Decision Tree,1.0,1,1
 Unary addition 111+11 (halts),50,halted,8,1,random,Random Forest,0.9995614035087719,1,1
 Unary addition 111+11 (halts),50,halted,8,1,random,Neural Net (MLP),0.9999733298934624,1,1
 Unary addition 111+11 (halts),50,halted,8,1,hard,Decision Tree,0.8030428715653648,1,1
-Unary addition 111+11 (halts),50,halted,8,1,hard,Random Forest,0.5667602327124738,1,1
+Unary addition 111+11 (halts),50,halted,8,1,hard,Random Forest,0.5667602327124739,1,1
 Unary addition 111+11 (halts),50,halted,8,1,hard,Neural Net (MLP),0.3546772129725139,1,1
 Unary addition 111+11 (halts),100,halted,8,1,random,Decision Tree,1.0,1,1
 Unary addition 111+11 (halts),100,halted,8,1,random,Random Forest,0.975,1,1
@@ -195,7 +195,7 @@ Unary addition 111+11 (halts),250,halted,8,1,random,Decision Tree,1.0,1,1
 Unary addition 111+11 (halts),250,halted,8,1,random,Random Forest,0.975,1,1
 Unary addition 111+11 (halts),250,halted,8,1,random,Neural Net (MLP),0.999998485367694,1,1
 Unary addition 111+11 (halts),250,halted,8,1,hard,Decision Tree,0.8576250035451882,1,1
-Unary addition 111+11 (halts),250,halted,8,1,hard,Random Forest,0.5425328783293533,1,1
+Unary addition 111+11 (halts),250,halted,8,1,hard,Random Forest,0.5425328783293532,1,1
 Unary addition 111+11 (halts),250,halted,8,1,hard,Neural Net (MLP),0.1846804944127861,1,1
 Unary addition 111+11 (halts),500,halted,8,1,random,Decision Tree,1.0,1,1
 Unary addition 111+11 (halts),500,halted,8,1,random,Random Forest,0.975,1,1
@@ -240,7 +240,7 @@ Unary addition 111+11 (halts),1000,halted,8,1,hard,Neural Net (MLP),0.1846804944
 "Binary palindrome checker (halts, writes Y/N)",250,halted,36,1,hard,Random Forest,0.47111781568596206,0,0
 "Binary palindrome checker (halts, writes Y/N)",250,halted,36,1,hard,Neural Net (MLP),0.9411793661192183,1,1
 "Binary palindrome checker (halts, writes Y/N)",500,halted,36,1,random,Decision Tree,0.7297187117814921,1,1
-"Binary palindrome checker (halts, writes Y/N)",500,halted,36,1,random,Random Forest,0.4596038667404946,0,0
+"Binary palindrome checker (halts, writes Y/N)",500,halted,36,1,random,Random Forest,0.45960386674049464,0,0
 "Binary palindrome checker (halts, writes Y/N)",500,halted,36,1,random,Neural Net (MLP),0.9937657594605506,1,1
 "Binary palindrome checker (halts, writes Y/N)",500,halted,36,1,hard,Decision Tree,0.9471508144631801,1,1
 "Binary palindrome checker (halts, writes Y/N)",500,halted,36,1,hard,Random Forest,0.47111781568596206,0,0
@@ -279,7 +279,7 @@ Binary countdown to zero (slow halter),250,halted,125,1,random,Decision Tree,0.0
 Binary countdown to zero (slow halter),250,halted,125,1,random,Random Forest,0.286621617965368,0,0
 Binary countdown to zero (slow halter),250,halted,125,1,random,Neural Net (MLP),0.9653550367504102,0,0
 Binary countdown to zero (slow halter),250,halted,125,1,hard,Decision Tree,0.8576250035451882,1,1
-Binary countdown to zero (slow halter),250,halted,125,1,hard,Random Forest,0.5113921865297494,1,1
+Binary countdown to zero (slow halter),250,halted,125,1,hard,Random Forest,0.5113921865297495,1,1
 Binary countdown to zero (slow halter),250,halted,125,1,hard,Neural Net (MLP),0.0028337746308424562,0,0
 Binary countdown to zero (slow halter),500,halted,125,1,random,Decision Tree,0.07731068240714077,0,0
 Binary countdown to zero (slow halter),500,halted,125,1,random,Random Forest,0.286621617965368,0,0
@@ -303,7 +303,7 @@ Custom symbols a/b: flip & halt,25,halted,6,1,random,Decision Tree,1.0,1,1
 Custom symbols a/b: flip & halt,25,halted,6,1,random,Random Forest,1.0,1,1
 Custom symbols a/b: flip & halt,25,halted,6,1,random,Neural Net (MLP),0.9999572041814919,1,1
 Custom symbols a/b: flip & halt,25,halted,6,1,hard,Decision Tree,0.8515898400752608,1,1
-Custom symbols a/b: flip & halt,25,halted,6,1,hard,Random Forest,0.46028461579388835,0,0
+Custom symbols a/b: flip & halt,25,halted,6,1,hard,Random Forest,0.4602846157938884,0,0
 Custom symbols a/b: flip & halt,25,halted,6,1,hard,Neural Net (MLP),0.0005532653419678363,0,0
 Custom symbols a/b: flip & halt,50,halted,6,1,random,Decision Tree,1.0,1,1
 Custom symbols a/b: flip & halt,50,halted,6,1,random,Random Forest,0.9916666666666667,1,1
@@ -315,7 +315,7 @@ Custom symbols a/b: flip & halt,100,halted,6,1,random,Decision Tree,1.0,1,1
 Custom symbols a/b: flip & halt,100,halted,6,1,random,Random Forest,1.0,1,1
 Custom symbols a/b: flip & halt,100,halted,6,1,random,Neural Net (MLP),0.9999564613110975,1,1
 Custom symbols a/b: flip & halt,100,halted,6,1,hard,Decision Tree,0.8575418994413472,1,1
-Custom symbols a/b: flip & halt,100,halted,6,1,hard,Random Forest,0.5181560407107975,1,1
+Custom symbols a/b: flip & halt,100,halted,6,1,hard,Random Forest,0.5181560407107973,1,1
 Custom symbols a/b: flip & halt,100,halted,6,1,hard,Neural Net (MLP),7.440080095016019e-05,0,0
 Custom symbols a/b: flip & halt,250,halted,6,1,random,Decision Tree,1.0,1,1
 Custom symbols a/b: flip & halt,250,halted,6,1,random,Random Forest,1.0,1,1
@@ -327,7 +327,7 @@ Custom symbols a/b: flip & halt,500,halted,6,1,random,Decision Tree,1.0,1,1
 Custom symbols a/b: flip & halt,500,halted,6,1,random,Random Forest,1.0,1,1
 Custom symbols a/b: flip & halt,500,halted,6,1,random,Neural Net (MLP),0.9999564613110975,1,1
 Custom symbols a/b: flip & halt,500,halted,6,1,hard,Decision Tree,0.8576250035451882,1,1
-Custom symbols a/b: flip & halt,500,halted,6,1,hard,Random Forest,0.42763717569008175,0,0
+Custom symbols a/b: flip & halt,500,halted,6,1,hard,Random Forest,0.4276371756900818,0,0
 Custom symbols a/b: flip & halt,500,halted,6,1,hard,Neural Net (MLP),4.81287762817045e-05,0,0
 Custom symbols a/b: flip & halt,1000,halted,6,1,random,Decision Tree,1.0,1,1
 Custom symbols a/b: flip & halt,1000,halted,6,1,random,Random Forest,1.0,1,1

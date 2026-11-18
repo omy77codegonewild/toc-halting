@@ -1,0 +1,12 @@
+method,limit,ms_per_pair
+simulate L=10 steps,10.0,0.01843074999851524
+simulate L=25 steps,25.0,0.035648955001306604
+simulate L=50 steps,50.0,0.05573598900082288
+simulate L=100 steps,100.0,0.10342729500007408
+simulate L=250 steps,250.0,0.23141117299928737
+simulate L=500 steps,500.0,0.47239216300113185
+simulate L=1000 steps,1000.0,0.9244765230014309
+features (static + 10-step probe),,0.06743997299963667
+"predict (Decision Tree, batched)",,0.00045696999950450845
+"predict (Random Forest, batched)",,0.035797160999209154
+"predict (Neural Net (MLP), batched)",,0.0015946970015647821

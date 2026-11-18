@@ -1,7 +1,7 @@
 """Bounded-halting prediction experiments.
 
     python experiment.py            # full run (a few minutes, depending on CPU)
-    python experiment.py --quick    # small smoke-test run (~30 s); overwrites results/
+    python experiment.py --quick    # smaller smoke-test run (~2 min); overwrites results/
 
 Label for a step limit L:  1 = "halts within L steps", 0 = "has not halted within L steps".
 (0 deliberately does NOT mean "never halts".)
@@ -23,6 +23,7 @@ Outputs (in results/):
   probe_sweep.csv                        effect of the probe budget k
   mlp_ablation.csv                       how the MLP's class-imbalance fix matters
   ood_benchmarks.csv                     hand-written / busy-beaver machines
+  cost.csv                               ms per pair: simulating L steps vs features + prediction
   models.joblib                          models trained on all data (used by app.py)
   summary.md                             key tables in Markdown (source for REPORT.md)
   *.png                                  plots
@@ -30,6 +31,7 @@ Outputs (in results/):
 from __future__ import annotations
 
 import argparse
+import os
 import random
 import time
 import warnings
@@ -37,6 +39,7 @@ from pathlib import Path
 
 import joblib
 import matplotlib
+from joblib import Parallel, delayed
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -136,6 +139,25 @@ def split(n: int, strat: np.ndarray, seed: int) -> tuple[np.ndarray, np.ndarray]
     return train_test_split(np.arange(n), test_size=0.3, random_state=seed, stratify=strat)
 
 
+def _quietly(fn, seed: int) -> list[dict]:
+    # Worker processes don't inherit warning filters. The MLP's "max iterations reached"
+    # warning is expected: we deliberately train for a fixed 60 epochs (see ml_models.py).
+    warnings.filterwarnings("ignore")
+    return fn(seed)
+
+
+def over_seeds(one_seed) -> list[dict]:
+    """Run `one_seed(seed) -> list of result rows` for every seed and concatenate the rows.
+
+    The seeds are independent (each one is its own train/test split), so they run in
+    parallel worker processes. Every seed is computed exactly as it would be sequentially,
+    so the results are identical; only the wall-clock time shrinks.
+    """
+    n_jobs = min(len(SEEDS), os.cpu_count() or 1)
+    per_seed = Parallel(n_jobs=n_jobs)(delayed(_quietly)(one_seed, seed) for seed in SEEDS)
+    return [row for rows in per_seed for row in rows]
+
+
 # ------------------------------------------------------------------ metrics
 def scores(y_true: np.ndarray, y_pred: np.ndarray, y_prob: np.ndarray | None = None) -> dict:
     has_both = len(np.unique(y_true)) == 2
@@ -181,9 +203,10 @@ def fit_and_score(model, Xtr, ytr, Xte, yte) -> dict:
 # ------------------------------------------------------------------ studies
 def run_study(df: pd.DataFrame, name: str) -> pd.DataFrame:
     """Train/evaluate every model at every step limit, over all split seeds."""
-    rows = []
     strat = (df["halt_step"] >= 0).astype(int)
-    for seed in SEEDS:
+
+    def one_seed(seed: int) -> list[dict]:
+        rows = []
         idx_train, idx_test = split(len(df), strat, seed)
         # If two step limits give exactly the same labels (e.g. nothing new halts between
         # L=250 and L=500), every model would be trained identically -> reuse the results.
@@ -214,7 +237,9 @@ def run_study(df: pd.DataFrame, name: str) -> pd.DataFrame:
                                           **fit_and_score(model, Xtr, ytr, Xte, yte)))
             cache[y.tobytes()] = block
             rows += block
-    return pd.DataFrame(rows)
+        return rows
+
+    return pd.DataFrame(over_seeds(one_seed))
 
 
 def summarize(res: pd.DataFrame, keys: list[str], metrics: list[str]) -> pd.DataFrame:
@@ -239,10 +264,12 @@ def complexity_study(dfs: dict[str, pd.DataFrame], L: int = REPORT_L) -> pd.Data
         y = label(df, L)
         ns_col = df["n_states"].values
         cutoff = max_train_states[pop_name]
-        for seed in SEEDS:
+
+        def one_seed(seed: int) -> list[dict]:
+            out = []
             idx_train, _ = split(len(df), (df["halt_step"] >= 0), seed)
             is_train = np.isin(np.arange(len(df)), idx_train)
-            tr = is_train & (ns_col <= cutoff)
+            tr = is_train & (ns_col <= cutoff)  # train only on SMALL machines
             for fs_name, cols in FEATURE_SETS.items():
                 X = df[cols].values
                 for m_name, model in make_models(seed).items():
@@ -250,12 +277,15 @@ def complexity_study(dfs: dict[str, pd.DataFrame], L: int = REPORT_L) -> pd.Data
                     for ns in sorted(np.unique(ns_col)):
                         # seen sizes: only test rows; unseen sizes: every row (none were trained on)
                         te = (ns_col == ns) & (~is_train if ns <= cutoff else True)
-                        rows.append(dict(
+                        out.append(dict(
                             population=pop_name, seed=seed, train_max_states=cutoff,
                             features=fs_name, model=m_name, n_states=int(ns), seen=bool(ns <= cutoff),
                             n_test=int(te.sum()), n_pos=int(y[te].sum()),
                             **scores(y[te], model.predict(X[te]), prob_pos(model, X[te])),
                         ))
+            return out
+
+        rows += over_seeds(one_seed)
     return pd.DataFrame(rows)
 
 
@@ -285,11 +315,14 @@ def probe_sweep_study(df_hard: pd.DataFrame, pairs: list, L: int = REPORT_L) -> 
         # k = 0 means static features only (no execution at all)
         feats = [static_features(tm, inp) if k == 0 else all_features(tm, inp, k=k) for tm, inp in pairs]
         X = pd.DataFrame(feats).values
-        for seed in SEEDS:
+
+        def one_seed(seed: int) -> list[dict]:
             idx_tr, idx_te = split(len(y), y, seed)
-            for m_name, model in make_models(seed).items():
-                rows.append(dict(probe_k=k, limit=L, seed=seed, model=m_name,
-                                 **fit_and_score(model, X[idx_tr], y[idx_tr], X[idx_te], y[idx_te])))
+            return [dict(probe_k=k, limit=L, seed=seed, model=m_name,
+                         **fit_and_score(model, X[idx_tr], y[idx_tr], X[idx_te], y[idx_te]))
+                    for m_name, model in make_models(seed).items()]
+
+        rows += over_seeds(one_seed)
     return pd.DataFrame(rows)
 
 
@@ -299,13 +332,44 @@ def mlp_ablation_study(dfs: dict[str, pd.DataFrame], L: int = REPORT_L) -> pd.Da
     for pop_name, df in dfs.items():
         y = label(df, L)
         X = df[FULL_COLS].values
-        for seed in SEEDS:
+
+        def one_seed(seed: int) -> list[dict]:
+            out = []
             idx_tr, idx_te = split(len(df), (df["halt_step"] >= 0), seed)
             for variant, opts in MLP_VARIANTS.items():
                 model = BalancedMLP(random_state=seed, **opts)
                 r = fit_and_score(model, X[idx_tr], y[idx_tr], X[idx_te], y[idx_te])
-                rows.append(dict(population=pop_name, seed=seed, limit=L, variant=variant,
-                                 threshold=model.threshold_, **r))
+                out.append(dict(population=pop_name, seed=seed, limit=L, variant=variant,
+                                threshold=model.threshold_, **r))
+            return out
+
+        rows += over_seeds(one_seed)
+    return pd.DataFrame(rows)
+
+
+def cost_study(pairs: list, app_models: dict, n: int = 1000) -> pd.DataFrame:
+    """Wall-clock cost per (machine, input): simulating L steps vs. features + prediction.
+
+    Simulation cost grows with L (unresolved machines run the full budget); the ML
+    triage cost is fixed (static features + a PROBE_STEPS-step probe + one prediction).
+    """
+    sample = pairs[:n]
+    rows = []
+    for L in LIMITS:
+        t = time.perf_counter()
+        for tm, inp in sample:
+            run(tm, inp, L)
+        rows.append(dict(method=f"simulate L={L} steps", limit=L, ms_per_pair=(time.perf_counter() - t) / len(sample) * 1000))
+    t = time.perf_counter()
+    X = np.array([[f[c] for c in FULL_COLS] for f in (all_features(tm, inp) for tm, inp in sample)])
+    feat_ms = (time.perf_counter() - t) / len(sample) * 1000
+    rows.append(dict(method=f"features (static + {PROBE_STEPS}-step probe)", limit=np.nan, ms_per_pair=feat_ms))
+    for m_name in MODELS:
+        clf = app_models["hard"][m_name][REPORT_L]
+        t = time.perf_counter()
+        clf.predict_proba(X)  # batched, as a triage pipeline would do it
+        rows.append(dict(method=f"predict ({m_name}, batched)", limit=np.nan,
+                         ms_per_pair=(time.perf_counter() - t) / len(sample) * 1000))
     return pd.DataFrame(rows)
 
 
@@ -495,7 +559,7 @@ def _pm(mean, std, digits=3) -> str:
     return f"{mean:.{digits}f} ± {0 if pd.isna(std) else std:.{digits}f}"
 
 
-def write_summary_md(dfs, summary, cx, fi, sweep, ablation, ood, runtime_s) -> None:
+def write_summary_md(dfs, summary, cx, fi, sweep, ablation, ood, cost, mlp_thresholds, runtime_s) -> None:
     """Key numbers in Markdown so the report can quote real results verbatim."""
     L = REPORT_L
     md = [f"# Experiment summary (auto-generated by experiment.py)\n",
@@ -531,11 +595,11 @@ def write_summary_md(dfs, summary, cx, fi, sweep, ablation, ood, runtime_s) -> N
                 _pm(d.at[l, f"{metric}_mean"], d.at[l, f"{metric}_std"]) if l in d.index else "n/a"
                 for l in LIMITS) + " |")
 
-    md.append(f"\n## Complexity generalisation (L = {L}, mean over seeds)\n\n| population | features | model | n_states | seen in training | accuracy | F1 | ROC-AUC |\n|---|---|---|---|---|---|---|---|")
-    cxs = summarize(cx, ["population", "features", "model", "n_states", "seen"], ["accuracy", "f1", "roc_auc"])
-    for _, r in cxs[cxs["model"] == "Random Forest"].iterrows():
+    md.append(f"\n## Complexity generalisation (L = {L}, mean over seeds)\n\n| population | features | model | n_states | seen in training | accuracy | recall | F1 | ROC-AUC |\n|---|---|---|---|---|---|---|---|---|")
+    cxs = summarize(cx, ["population", "features", "model", "n_states", "seen"], ["accuracy", "recall", "f1", "roc_auc"])
+    for _, r in cxs.iterrows():
         md.append(f"| {r['population']} | {r['features']} | {r['model']} | {r['n_states']} | {'yes' if r['seen'] else 'no'} | "
-                  + " | ".join(_pm(r[f"{m}_mean"], r[f"{m}_std"]) for m in ["accuracy", "f1", "roc_auc"]) + " |")
+                  + " | ".join(_pm(r[f"{m}_mean"], r[f"{m}_std"]) for m in ["accuracy", "recall", "f1", "roc_auc"]) + " |")
 
     md.append(f"\n## Random Forest feature importance (L = {L}, top 8)\n")
     for pop in dfs:
@@ -565,9 +629,15 @@ def write_summary_md(dfs, summary, cx, fi, sweep, ablation, ood, runtime_s) -> N
         first = g.iloc[0]
         md.append(f"| {preset} | {first['actual_status']} ({first['actual_steps']}) | " + " | ".join(cells) + " |")
     md.append("\nCells: predicted P(halts within L); ✗ = the model's yes/no prediction is wrong.")
+    md.append("\n**Decision thresholds of the MLP app models:** " + ", ".join(
+        f"{pop} L={lim}: {thr:.3f}" for (pop, lim), thr in mlp_thresholds.items()))
     acc = ood.groupby(["train_pop", "model"])["correct"].mean()
     md.append("\n**OOD accuracy over all presets and all L:** " +
               ", ".join(f"{p}/{m}: {v:.0%}" for (p, m), v in acc.items()))
+
+    md.append("\n## Cost per (machine, input) pair: simulation vs ML triage (hard pairs, ms)\n\n| method | ms per pair |\n|---|---|")
+    for _, r in cost.iterrows():
+        md.append(f"| {r['method']} | {r['ms_per_pair']:.4f} |")
 
     (OUT / "summary.md").write_text("\n".join(md) + "\n", encoding="utf-8")
 
@@ -616,11 +686,18 @@ def main(n_random: int, n_hard: int) -> None:
     joblib.dump({"models": app_models, "cols": FULL_COLS, "feature_importance": fi},
                 OUT / "models.joblib", compress=3)
 
+    log("cost of simulation vs ML triage")
+    cost = cost_study(hard_pairs, app_models)
+    cost.to_csv(OUT / "cost.csv", index=False)
+
     log("out-of-distribution benchmarks, plots, summary.md")
     ood = ood_benchmark_study(app_models)
     ood.to_csv(OUT / "ood_benchmarks.csv", index=False)
     make_plots(summary, cx, fi, sweep, ablation, ood)
-    write_summary_md(dfs, summary, cx, fi, sweep, ablation, ood, time.time() - t0)
+    # the MLP decides with a tuned threshold (not 0.5); record it for the report
+    mlp_thresholds = {(pop, lim): getattr(app_models[pop]["Neural Net (MLP)"][lim], "threshold_", 0.5)
+                      for pop in dfs for lim in (25, 100, 250)}
+    write_summary_md(dfs, summary, cx, fi, sweep, ablation, ood, cost, mlp_thresholds, time.time() - t0)
     log(f"all done -> {OUT}")
 
 

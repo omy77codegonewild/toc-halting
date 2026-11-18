@@ -18,10 +18,50 @@ def _fresh_app() -> "AppTest":
     return at
 
 
-def test_app_loads_with_four_tabs():
+def test_app_loads_with_five_tabs():
     at = _fresh_app()
-    assert len(at.tabs) == 4
+    assert [t.label for t in at.tabs] == [
+        "🏠 Overview", "▶ Simulator", "🔮 Halting prediction", "📊 Experiments", "📚 Theory notes"]
     assert not at.error
+
+
+def _button(at, label):
+    return next(b for b in at.button if b.label == label)
+
+
+def test_simulator_explains_each_step():
+    at = _fresh_app()  # default machine: binary incrementer on 1011
+    texts = " ".join(m.value for m in at.markdown)
+    assert "δ(q0, 1) = (1, R, q0)" in texts  # rule applied at step 0
+    _button(at, "End ⏭").click().run()
+    assert not at.exception, [e.value for e in at.exception]
+    step_slider = next(s for s in at.slider if s.label == "Step through the run")
+    assert step_slider.value == 8  # incrementer halts after 8 steps
+    _button(at, "◀ Prev").click().run()
+    assert next(s for s in at.slider if s.label == "Step through the run").value == 7
+
+
+def test_final_step_explains_why_it_halted():
+    at = _fresh_app()
+    at.sidebar.selectbox[0].select("Unary addition 111+11 (halts)").run()
+    _button(at, "End ⏭").click().run()
+    assert not at.exception, [e.value for e in at.exception]
+    assert any("halt state" in m.value for m in at.success)  # reached H
+
+    at.sidebar.text_area[0].set_value("q0 1 1 R q0").run()  # no rule for (q0, _)
+    at.sidebar.text_input[2].set_value("11").run()
+    _button(at, "End ⏭").click().run()
+    assert not at.exception, [e.value for e in at.exception]
+    assert any("no rule" in m.value for m in at.success)
+
+
+def test_experiment_sections_render():
+    at = _fresh_app()
+    section = next(r for r in at.radio if r.key == "exp_section")
+    for option in section.options:
+        section.set_value(option).run()
+        assert not at.exception, (option, [e.value for e in at.exception])
+        section = next(r for r in at.radio if r.key == "exp_section")
 
 
 def test_every_preset_renders_with_correct_verdict():
@@ -57,7 +97,7 @@ def test_batch_test_matches_training_population():
     at = _fresh_app()
     batch_slider = next(s for s in at.slider if s.label == "Number of machines")
     batch_slider.set_value(50).run()
-    at.button[0].click().run()
+    _button(at, "Run batch test").click().run()
     assert not at.exception, [e.value for e in at.exception]
     labels = [m.label for m in at.metric]
     assert "Random Forest accuracy" in labels
